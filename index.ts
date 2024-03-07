@@ -14,8 +14,12 @@ const schemas = {
       display: 'number',
       type: 'number',
     },
+    number11: {
+      display: 'number',
+      type: 'number',
+    },
   },
-  /*bar: {
+  bar: {
     date2: {
       display: 'date',
       type: 'date'
@@ -28,38 +32,44 @@ const schemas = {
       display: 'number',
       type: 'number'
     }
-  },*/
+  },
 } as const
 
+type NumericKeyDeriver<T> = T extends T ?{
+  [K in keyof T]: T[K] extends {
+    type: 'number'
+  }
+    ? K
+    : never
+}[keyof T]: never
+
+type DateKeyDeriver<T> = T extends T ?{
+  [K in keyof T]: T[K] extends {
+    type: 'date'
+  }
+    ? K
+    : never
+}[keyof T]: never
+
+type TextKeyDeriver<T> = T extends T ?{
+  [K in keyof T]: T[K] extends {
+    type: 'text'
+  }
+    ? K
+    : never
+}[keyof T]: never
+
 function schema(schemaType: keyof typeof schemas) {
-  const fields: (typeof schemas)[typeof schemaType] = schemas[schemaType]
-  const fieldNames = Object.keys(fields) as Array<
-    keyof (typeof schemas)[keyof typeof schemas]
-  >
+  const fields = schemas[schemaType]
+  type Fields = typeof fields
+  type FieldNames = keyof Fields
+  const fieldNames: Array<keyof Fields> = Object.keys(fields)
 
-  type NumericColumnKeys = {
-    [K in keyof typeof fields]: (typeof fields)[K] extends {
-      type: 'number'
-    }
-      ? K
-      : never
-  }[keyof typeof fields]
+  type NumericColumnKeys = NumericKeyDeriver<typeof fields>
 
-  type DateColumnKeys = {
-    [K in keyof typeof fields]: (typeof fields)[K] extends {
-      type: 'date'
-    }
-      ? K
-      : never
-  }[keyof typeof fields]
+  type DateColumnKeys = DateKeyDeriver<typeof fields>
 
-  type TextColumnKeys = {
-    [K in keyof typeof fields]: (typeof fields)[K] extends {
-      type: 'text'
-    }
-      ? K
-      : never
-  }[keyof typeof fields]
+  type TextColumnKeys = TextKeyDeriver<typeof fields>
 
   const dateFilter = Type.Optional(Type.RegExp(/^\d\d\d\d-[0-1]\d-[0-3]\d$/))
   const numericFilter = Type.Optional(Type.Number())
